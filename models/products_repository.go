@@ -4,11 +4,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ProductRepository defines the interface for fetching products.
-type ProductRepository interface {
-	GetAllProducts() ([]Product, error)
-}
-
 type ProductsRepository struct {
 	db *gorm.DB
 }
