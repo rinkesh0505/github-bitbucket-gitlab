@@ -4,16 +4,22 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/models"
 )
 
-type CategoryService struct {
+//go:generate mockgen -package=category -source=service.go -destination=service_mock.go
+type CategoryService interface {
+	GetAllCategories() ([]Category, error)
+	CreateCategory(cat Category) error
+}
+
+type categoryService struct {
 	repo models.CategoryRepository
 }
 
-func NewCategoryService(repo models.CategoryRepository) *CategoryService {
-	return &CategoryService{repo: repo}
+func NewCategoryService(repo models.CategoryRepository) CategoryService {
+	return &categoryService{repo: repo}
 }
 
 // GetAllCategories returns all categories as API DTOs.
-func (s *CategoryService) GetAllCategories() ([]Category, error) {
+func (s *categoryService) GetAllCategories() ([]Category, error) {
 	cats, err := s.repo.GetAllCategories()
 	if err != nil {
 		return nil, err
@@ -22,7 +28,7 @@ func (s *CategoryService) GetAllCategories() ([]Category, error) {
 }
 
 // CreateCategory creates a new category in the DB.
-func (s *CategoryService) CreateCategory(cat Category) error {
+func (s *categoryService) CreateCategory(cat Category) error {
 	return s.repo.CreateCategory(cat.ToModelCategory())
 }
 

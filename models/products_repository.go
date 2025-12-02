@@ -5,6 +5,8 @@ import (
 )
 
 // ProductRepository defines the interface for fetching products with pagination and filters.
+//go:generate mockgen -package=models -source=products_repository.go -destination=products_repository_mock.go
+
 type ProductRepository interface {
 	GetProducts(query ProductQuery) ([]Product, int64, error)
 	GetProductByCode(code string) (*Product, error)

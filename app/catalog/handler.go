@@ -7,10 +7,10 @@ import (
 )
 
 type CatalogHandler struct {
-	service *CatalogService
+	service CatalogService
 }
 
-func NewCatalogHandler(service *CatalogService) *CatalogHandler {
+func NewCatalogHandler(service CatalogService) *CatalogHandler {
 	return &CatalogHandler{
 		service: service,
 	}

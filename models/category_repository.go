@@ -5,6 +5,8 @@ import (
 )
 
 // CategoryRepository defines the interface for accessing category data.
+//
+//go:generate mockgen -package=models -source=category_repository.go -destination=category_repository_mock.go
 type CategoryRepository interface {
 	GetAllCategories() ([]Category, error)
 	GetCategoryByID(id uint) (*Category, error)

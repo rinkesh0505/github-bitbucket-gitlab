@@ -5,20 +5,26 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// CatalogService handles business logic for the catalog.
-type CatalogService struct {
+//go:generate mockgen -package=catalog -source=service.go -destination=service_mock.go
+type CatalogService interface {
+	GetProducts(req ListRequest) ([]Product, int64, error)
+	GetProductDetails(code string) (*ProductDetails, error)
+}
+
+// catalogService handles business logic for the catalog.
+type catalogService struct {
 	repo models.ProductRepository
 }
 
 // NewCatalogService creates a new catalog service.
-func NewCatalogService(repo models.ProductRepository) *CatalogService {
-	return &CatalogService{
+func NewCatalogService(repo models.ProductRepository) CatalogService {
+	return &catalogService{
 		repo: repo,
 	}
 }
 
 // GetProducts fetches products for the given request and converts them to response format.
-func (s *CatalogService) GetProducts(req ListRequest) ([]Product, int64, error) {
+func (s *catalogService) GetProducts(req ListRequest) ([]Product, int64, error) {
 	q := req.ToProductQuery()
 
 	modelProducts, total, err := s.repo.GetProducts(q)
@@ -30,7 +36,7 @@ func (s *CatalogService) GetProducts(req ListRequest) ([]Product, int64, error) 
 
 // GetProductDetails returns a product with its variants and category by product code.
 // Variants without a specific price inherit the product price.
-func (s *CatalogService) GetProductDetails(code string) (*ProductDetails, error) {
+func (s *catalogService) GetProductDetails(code string) (*ProductDetails, error) {
 	mp, err := s.repo.GetProductByCode(code)
 	if err != nil {
 		return nil, err
