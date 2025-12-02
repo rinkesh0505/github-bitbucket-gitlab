@@ -27,18 +27,11 @@ func main() {
 	defer stop()
 
 	// Initialize database connection
-	// db, close := database.New(
-	// 	os.Getenv("POSTGRES_USER"),
-	// 	os.Getenv("POSTGRES_PASSWORD"),
-	// 	os.Getenv("POSTGRES_DB"),
-	// 	os.Getenv("POSTGRES_PORT"),
-	// )
-
 	db, close := database.New(
-		"postgres",
-		"password",
-		"challenge",
-		"5432",
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
+		os.Getenv("POSTGRES_PORT"),
 	)
 
 	defer close()
