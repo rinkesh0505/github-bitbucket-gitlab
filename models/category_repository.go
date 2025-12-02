@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// CategoryRepository defines the interface for accessing category data.
 type CategoryRepository interface {
 	GetAllCategories() ([]Category, error)
 	GetCategoryByID(id uint) (*Category, error)

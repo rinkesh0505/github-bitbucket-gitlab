@@ -5,6 +5,7 @@ import (
 )
 
 // Product represents a product in the catalog.
+// It includes a unique code, a price, and belongs to a category.
 type Product struct {
 	ID         uint            `gorm:"primaryKey"`
 	Code       string          `gorm:"uniqueIndex;not null"`
@@ -16,4 +17,11 @@ type Product struct {
 
 func (p *Product) TableName() string {
 	return "products"
+}
+
+type ProductQuery struct {
+	Offset   int
+	Limit    int
+	Category string
+	PriceLT  *decimal.Decimal
 }

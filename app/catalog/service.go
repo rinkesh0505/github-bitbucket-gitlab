@@ -17,22 +17,44 @@ func NewCatalogService(repo models.ProductRepository) *CatalogService {
 	}
 }
 
-// GetAllProducts fetches all products and converts them to response format.
-func (s *CatalogService) GetAllProducts() ([]Product, error) {
-	modelProducts, err := s.repo.GetAllProducts()
+// GetProducts fetches products for the given request and converts them to response format.
+func (s *CatalogService) GetProducts(req ListRequest) ([]Product, int64, error) {
+	q := req.ToProductQuery()
+
+	modelProducts, total, err := s.repo.GetProducts(q)
+	if err != nil {
+		return nil, 0, err
+	}
+	return mapToResponseProducts(modelProducts), total, nil
+}
+
+// GetProductDetails returns a product with its variants and category by product code.
+// Variants without a specific price inherit the product price.
+func (s *CatalogService) GetProductDetails(code string) (*ProductDetails, error) {
+	mp, err := s.repo.GetProductByCode(code)
 	if err != nil {
 		return nil, err
 	}
-	return mapToResponseProducts(modelProducts), nil
+
+	return mapProductToDetails(mp), nil
 }
 
 // mapToResponseProducts converts model products to API response products.
 func mapToResponseProducts(modelProducts []models.Product) []Product {
 	products := make([]Product, len(modelProducts))
 	for i, p := range modelProducts {
+		var cat *Category
+		if p.Category != nil {
+			cat = &Category{
+				Code: p.Category.Code,
+				Name: p.Category.Name,
+			}
+		}
+
 		products[i] = Product{
-			Code:  p.Code,
-			Price: priceToFloat64(p.Price),
+			Code:     p.Code,
+			Price:    priceToFloat64(p.Price),
+			Category: cat,
 		}
 	}
 	return products
@@ -41,4 +63,41 @@ func mapToResponseProducts(modelProducts []models.Product) []Product {
 // priceToFloat64 converts decimal price to float64.
 func priceToFloat64(price decimal.Decimal) float64 {
 	return price.InexactFloat64()
+}
+
+// mapProductToDetails converts a model Product to API ProductDetails.
+func mapProductToDetails(mp *models.Product) *ProductDetails {
+	pd := &ProductDetails{
+		Code:  mp.Code,
+		Price: priceToFloat64(mp.Price),
+	}
+	if mp.Category != nil {
+		pd.Category = &Category{
+			Code: mp.Category.Code,
+			Name: mp.Category.Name,
+		}
+	}
+
+	pd.Variants = make([]VariantDetails, len(mp.Variants))
+	for i, v := range mp.Variants {
+		pd.Variants[i] = mapVariantToDetails(v, mp.Price)
+	}
+
+	return pd
+}
+
+// mapVariantToDetails maps a model Variant to VariantDetails, inheriting
+// the product price when the variant price is unspecified.
+func mapVariantToDetails(v models.Variant, productPrice decimal.Decimal) VariantDetails {
+	var price decimal.Decimal
+	if v.Price.IsZero() {
+		price = productPrice
+	} else {
+		price = v.Price
+	}
+	return VariantDetails{
+		Name:  v.Name,
+		SKU:   v.SKU,
+		Price: priceToFloat64(price),
+	}
 }
