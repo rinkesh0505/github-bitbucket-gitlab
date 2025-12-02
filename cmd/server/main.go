@@ -11,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/mytheresa/go-hiring-challenge/app/catalog"
+	"github.com/mytheresa/go-hiring-challenge/app/category"
 	"github.com/mytheresa/go-hiring-challenge/app/database"
 	"github.com/mytheresa/go-hiring-challenge/models"
 )
@@ -32,15 +33,25 @@ func main() {
 		os.Getenv("POSTGRES_DB"),
 		os.Getenv("POSTGRES_PORT"),
 	)
+
 	defer close()
 
 	// Initialize handlers
 	prodRepo := models.NewProductsRepository(db)
-	cat := catalog.NewCatalogHandler(prodRepo)
+	catalogService := catalog.NewCatalogService(prodRepo)
+	cat := catalog.NewCatalogHandler(catalogService)
+
+	// Category module
+	categoryRepo := models.NewCategoriesRepository(db)
+	categoryService := category.NewCategoryService(categoryRepo)
+	categoryHandler := category.NewCategoryHandler(categoryService)
 
 	// Set up routing
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /catalog", cat.HandleGet)
+	mux.HandleFunc("/catalog", cat.HandleGet)
+	// product details: /catalog/{code}
+	mux.HandleFunc("/catalog/", cat.HandleGetDetails)
+	mux.HandleFunc("/categories", setupCategoriesHandler(categoryHandler))
 
 	// Set up the HTTP server
 	srv := &http.Server{
@@ -62,4 +73,18 @@ func main() {
 	log.Println("Shutting down server...")
 	srv.Shutdown(ctx)
 	stop()
+}
+
+// setupCategoriesHandler returns an http.HandlerFunc that routes GET and POST requests
+func setupCategoriesHandler(h *category.CategoryHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			h.HandleGetAll(w, r)
+		case http.MethodPost:
+			h.HandleCreate(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	}
 }
