@@ -3,6 +3,8 @@ package category
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/mytheresa/go-hiring-challenge/app/api"
 )
 
 type CategoryHandler struct {
@@ -17,35 +19,27 @@ func NewCategoryHandler(service CategoryService) *CategoryHandler {
 func (h *CategoryHandler) HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	cats, err := h.service.GetAllCategories()
 	if err != nil {
-		http.Error(w, "failed to fetch categories", http.StatusInternalServerError)
+		api.ErrorResponse(w, http.StatusInternalServerError, "failed to fetch categories")
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(cats); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	api.OKResponse(w, cats)
 }
 
 // HandleCreate handles POST /categories requests to create a new category.
 func (h *CategoryHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	var cat Category
 	if err := json.NewDecoder(r.Body).Decode(&cat); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		api.ErrorResponse(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	if err := cat.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		api.ErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err := h.service.CreateCategory(cat)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.service.CreateCategory(cat); err != nil {
+		api.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(cat); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	api.OKResponse(w, cat)
 }

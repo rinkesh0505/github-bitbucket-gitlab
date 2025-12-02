@@ -1,9 +1,10 @@
 package catalog
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/mytheresa/go-hiring-challenge/app/api"
 )
 
 type CatalogHandler struct {
@@ -23,25 +24,22 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 
 	req, err := NewListRequestFromValues(q)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		api.ErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	products, total, err := h.service.GetProducts(req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		api.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := Response{
-		Products: products,
-		Total:    total,
+	response := map[string]interface{}{
+		"products": products,
+		"total":    total,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	api.OKResponse(w, response)
 }
 
 // HandleGetDetails returns full product details.
@@ -49,20 +47,16 @@ func (h *CatalogHandler) HandleGetDetails(w http.ResponseWriter, r *http.Request
 	// Expect the code as the last path segment, e.g. /catalog/PROD001
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(parts) == 0 {
-		http.Error(w, "missing product code", http.StatusBadRequest)
+		api.ErrorResponse(w, http.StatusBadRequest, "missing product code")
 		return
 	}
 	code := parts[len(parts)-1]
 
 	pd, err := h.service.GetProductDetails(code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		api.ErrorResponse(w, http.StatusNotFound, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(pd); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	api.OKResponse(w, pd)
 }
